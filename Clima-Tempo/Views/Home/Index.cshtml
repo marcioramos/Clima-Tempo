@@ -1,2 +1,116 @@
-﻿
+﻿@model Clima_Tempo.ViewsModels.IndexViewModel
+@using Clima_Tempo.Extensions;
+
 <h2 class="text-center">Clima Tempo - Simples</h2>
+
+<div class="row">
+    <div class="col-md-6">
+
+        <div class="panel panel-lightgray">
+            <div class="panel-heading">Cidades mais quentes hoje</div>
+            <table class="table">
+                @foreach (var item in Model.MaisQuentes)
+                {
+                    <tr>
+                        <td>@item.Nome / @item.UF</td>
+                        <td class="text-right">Máx @item.Temperatura °C</td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+    </div>
+    <div class="col-md-6">
+
+        <div class="panel panel-lightgray">
+            <div class="panel-heading">Cidades mais frias hoje</div>
+            <table class="table">
+                @foreach (var item in Model.MaisFrias)
+                {
+                    <tr>
+                        <td>@item.Nome / @item.UF</td>
+                        <td class="text-right">Máx @item.Temperatura °C</td>
+                    </tr>
+                }
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="text-center">
+    <select name="listCidades" id="listCidades" class="form-control text-center" style="width:100%">
+    </select>
+</div>
+
+@if (Model.CidadeId > 0)
+{
+    <h3 class="text-center">Clima para os próximos 7 dias para a cidade de <b>@Model.Cidade / @Model.Estado</b></h3>
+
+    <div class="table-responsive p-0">
+        <table class="table table-hover text-nowrap">
+            <tr>
+                @foreach (var item in Model.Previsoes)
+                {
+
+                    <td>
+                        <div class="panel panel-lightgray">
+                            <div class="panel-heading text-center">
+                                @item.Data.ToString("dd/MM/yyyy")<br />@item.Data.DayOfWeek.ToPtBr()
+                            </div>
+                            <div class="panel-body">
+                                @item.Clima.ToCamelCase()<br />
+                                Mínima: @item.TemperaturaMinima °C<br />
+                                Máxima: @item.TemperaturaMaxima °C<br />
+                            </div>
+                        </div>
+                    </td>
+                }
+            </tr>
+        </table>
+    </div>
+}
+
+@section scripts {
+    <script>
+
+        $(document).ready(function () {
+
+            $('#listCidades').select2({
+                placeholder: 'Digite o nome da cidade para pesquisar',
+                minimumInputLength: 0,
+                allowClear: true,
+                ajax: {
+                    delay: 150,
+                    url: '@Url.Action("GetCidades", "Home")',
+                    dataType: 'json',
+                    async: true,
+                    data: function (params) {
+                        return {
+                            pageSize: 10,
+                            pageNum: params.page || 1,
+                            searchTerm: params.term
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: $.map(data.Results, function (obj) {
+                                return { id: obj.Id, text: obj.Nome };
+                            }),
+                            pagination: {
+                                more: (params.page * 10) <= data.Total
+                            }
+                        };
+                    }
+                }
+            });
+
+            $('#listCidades').on('select2:select', function (e) {
+                location.pathname = 'Home/Index/' + e.params.data.id;
+            });
+
+        });
+
+    </script>
+}
